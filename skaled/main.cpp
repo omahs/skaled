@@ -141,12 +141,6 @@ static void version() {
     std::cout.flush();
 }
 
-static std::string clientVersion() {
-    const auto* buildinfo = skale_get_buildinfo();
-    return std::string( "skaled/" ) + buildinfo->project_version + "/" + buildinfo->system_name +
-           "/" + buildinfo->compiler_id + buildinfo->compiler_version + "/" + buildinfo->build_type;
-}
-
 static std::string clientVersionColorized() {
     const auto* buildinfo = skale_get_buildinfo();
     return cc::info( "skaled" ) + cc::debug( "/" ) + cc::attention( buildinfo->project_version ) + cc::debug( "/" ) + cc::attention( buildinfo->system_name ) +
