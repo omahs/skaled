@@ -69,7 +69,7 @@
 #include <libweb3jsonrpc/Net.h>
 #include <libweb3jsonrpc/Personal.h>
 #include <libweb3jsonrpc/Skale.h>
-#include <libweb3jsonrpc/SkaleDebug.h>
+#include <libweb3jsonrpc/SkaleNetworkBrowser.h>
 #include <libweb3jsonrpc/SkaleStats.h>
 #include <libweb3jsonrpc/Test.h>
 #include <libweb3jsonrpc/Web3.h>
@@ -130,20 +130,27 @@ static void version() {
         ver = pv.substr( 0, pos );
     } else
         ver = pv;
-    cout << "Skaled............................" << ver << "\n";
-    if ( !commit.empty() ) {
-        cout << "Commit............................" << commit << "\n";
-    }
-    cout << "Skale network protocol version...." << dev::eth::c_protocolVersion << "\n";
-    cout << "Client database version..........." << dev::eth::c_databaseVersion << "\n";
-    cout << "Build............................." << buildinfo->system_name << "/"
-         << buildinfo->build_type << "\n";
+    std::cout << cc::info( "Skaled" ) << cc::debug( "............................" ) << cc::attention( ver ) << "\n";
+    if ( !commit.empty() )
+        cout << cc::info( "Commit" ) << cc::debug( "............................" ) << cc::attention( commit ) << "\n";
+    std::cout << cc::info( "Skale network protocol version" ) << cc::debug( "...." )
+              << cc::num10( dev::eth::c_protocolVersion ) << cc::debug(".") << cc::num10( c_minorProtocolVersion ) << "\n";
+    std::cout << cc::info( "Client database version" ) << cc::debug( "..........." ) << cc::num10( dev::eth::c_databaseVersion ) << "\n";
+    std::cout << cc::info( "Build" ) << cc::debug( "............................." ) <<cc::attention( buildinfo->system_name ) << cc::debug( "/" )
+              << cc::attention( buildinfo->build_type ) << "\n";
+    std::cout.flush();
 }
 
 static std::string clientVersion() {
     const auto* buildinfo = skale_get_buildinfo();
     return std::string( "skaled/" ) + buildinfo->project_version + "/" + buildinfo->system_name +
            "/" + buildinfo->compiler_id + buildinfo->compiler_version + "/" + buildinfo->build_type;
+}
+
+static std::string clientVersionColorized() {
+    const auto* buildinfo = skale_get_buildinfo();
+    return cc::info( "skaled" ) + cc::debug( "/" ) + cc::attention( buildinfo->project_version ) + cc::debug( "/" ) + cc::attention( buildinfo->system_name ) +
+           cc::debug( "/" ) + cc::attention( buildinfo->compiler_id ) + cc::notice( buildinfo->compiler_version ) + cc::debug( "/" ) + cc::attention( buildinfo->build_type );
 }
 
 /*
@@ -649,6 +656,10 @@ int main( int argc, char** argv ) try {
 #endif
 
     addClientOption( "sgx-url", po::value< string >()->value_name( "<url>" ), "SGX server url" );
+    addClientOption( "sgx-url-no-zmq", "Disable automatic use of ZMQ protocol for SGX\n" );
+
+    addClientOption( "skale-network-browser-verbose", "Turn on very detailed logging in SKALE NETWORK BROWSER\n" );
+    addClientOption( "skale-network-browser-refresh", po::value< size_t >()->value_name( "<seconds>" ), "Refresh time(in seconds) which SKALE NETWORK BROWSER will re-load all S-Chain descriptions from Skale Manager" );
 
     // skale - snapshot download command
     addClientOption( "download-snapshot", po::value< string >()->value_name( "<url>" ),
@@ -688,6 +699,13 @@ int main( int argc, char** argv ) try {
     addGeneralOption( "log-value-size-limit",
         po::value< size_t >()->value_name( "<size in bytes>" ),
         "Log value size limit(zero means unlimited)" );
+    addGeneralOption( "log-json-string-limit",
+        po::value< size_t >()->value_name( "<number of chars>" ),
+        "JSON string value length limit for logging, specify 0 for unlimited" );
+    addGeneralOption( "log-tx-params-limit",
+        po::value< size_t >()->value_name( "<number of chars>" ),
+        "Transaction params length limit in eth_sendRawTransaction calls for logging, specify 0 "
+        "for unlimited" );
     addGeneralOption( "dispatch-threads", po::value< size_t >()->value_name( "<count>" ),
         "Number of threads to run task dispatcher, default is CPU count * 2" );
     addGeneralOption( "version,V", "Show the version and exit" );
@@ -745,6 +763,14 @@ int main( int argc, char** argv ) try {
     if ( vm.count( "log-value-size-limit" ) ) {
         int n = vm["log-value-size-limit"].as< size_t >();
         cc::_max_value_size_ = ( n > 0 ) ? n : std::string::npos;
+    }
+    if ( vm.count( "log-json-string-limit" ) ) {
+        int n = vm["log-json-string-limit"].as< size_t >();
+        SkaleServerOverride::g_nMaxStringValueLengthForJsonLogs = n;
+    }
+    if ( vm.count( "log-tx-params-limit" ) ) {
+        int n = vm["log-tx-params-limit"].as< size_t >();
+        SkaleServerOverride::g_nMaxStringValueLengthForTransactionParams = n;
     }
 
     if ( vm.count( "test-url" ) ) {
@@ -841,11 +867,16 @@ int main( int argc, char** argv ) try {
         return 0;
     }
 
-    cout << std::endl << "skaled " << Version << std::endl << std::endl;
+    std::cout << cc::bright( "skaled " ) << cc::sunny( Version ) << "\n"
+              << cc::bright( "client " ) << clientVersionColorized() << "\n"
+              << cc::debug( "Recent build intent is " ) << cc::info( "5029, SKALE NETWORK BROWSER improvements" ) << "\n";
+    std::cout.flush();
+    version();
 
     pid_t this_process_pid = getpid();
     std::cout << cc::debug( "This process " ) << cc::info( "PID" ) << cc::debug( "=" )
-              << cc::size10( size_t( this_process_pid ) ) << std::endl;
+              << cc::size10( size_t( this_process_pid ) ) << "\n";
+    std::cout.flush();
 
     setupLogging( loggingOptions );
 
@@ -937,6 +968,24 @@ int main( int argc, char** argv ) try {
     if ( !chainConfigIsSet )
         // default to skale if not already set with `--config`
         chainParams = ChainParams( genesisInfo( eth::Network::Skale ) );
+
+    if ( chainConfigParsed ) {
+        try {
+            size_t n = joConfig["skaleConfig"]["nodeInfo"]["log-value-size-limit"].get< size_t >();
+            cc::_max_value_size_ = ( n > 0 ) ? n : std::string::npos;
+        } catch ( ... ) {
+        }
+        try {
+            size_t n = joConfig["skaleConfig"]["nodeInfo"]["log-json-string-limit"].get< size_t >();
+            SkaleServerOverride::g_nMaxStringValueLengthForJsonLogs = n;
+        } catch ( ... ) {
+        }
+        try {
+            size_t n = joConfig["skaleConfig"]["nodeInfo"]["log-tx-params-limit"].get< size_t >();
+            SkaleServerOverride::g_nMaxStringValueLengthForTransactionParams = n;
+        } catch ( ... ) {
+        }
+    }
 
     // First, get "ipc" true/false from config.json
     // Second, get it from command line parameter (higher priority source)
@@ -1594,6 +1643,19 @@ int main( int argc, char** argv ) try {
                     joConfig["skaleConfig"]["nodeInfo"]["maxOpenLeveldbFiles"].get< unsigned >();
         } catch ( ... ) {
         }
+
+        if ( vm.count( "log-value-size-limit" ) ) {
+            int n = vm["log-value-size-limit"].as< size_t >();
+            cc::_max_value_size_ = ( n > 0 ) ? n : std::string::npos;
+        }
+        if ( vm.count( "log-json-string-limit" ) ) {
+            int n = vm["log-json-string-limit"].as< size_t >();
+            SkaleServerOverride::g_nMaxStringValueLengthForJsonLogs = n;
+        }
+        if ( vm.count( "log-tx-params-limit" ) ) {
+            int n = vm["log-tx-params-limit"].as< size_t >();
+            SkaleServerOverride::g_nMaxStringValueLengthForTransactionParams = n;
+        }
     }
     ////////////// END CACHE PARAMS ////////////
 
@@ -1687,6 +1749,18 @@ int main( int argc, char** argv ) try {
     if ( vm.count( "sgx-url" ) ) {
         chainParams.nodeInfo.sgxServerUrl = vm["sgx-url"].as< string >();
     }
+    bool isDisableZMQ = false;
+    if ( vm.count( "sgx-url-no-zmq" ) ) {
+        isDisableZMQ = true;
+    }
+
+    if ( vm.count( "skale-network-browser-verbose" ) ) {
+        skale::network::browser::g_bVerboseLogging = true;
+    }
+    if ( vm.count( "skale-network-browser-refresh" ) ) {
+        skale::network::browser::g_nRefreshIntervalInSeconds = vm["skale-network-browser-refresh"].as< size_t >();
+    }
+
 
     std::shared_ptr< SharedSpace > shared_space;
     if ( vm.count( "shared-space-path" ) )
@@ -2981,6 +3055,7 @@ int main( int argc, char** argv ) try {
             serverOpts.netOpts_.bindOptsStandard_.nBasePortWSS4_ = nExplicitPortWSS4std;
             serverOpts.netOpts_.bindOptsStandard_.strAddrWSS6_ = chainParams.nodeInfo.ip6;
             serverOpts.netOpts_.bindOptsStandard_.nBasePortWSS6_ = nExplicitPortWSS6std;
+
             serverOpts.netOpts_.bindOptsInformational_.cntServers_ = cntServersNfo;
             serverOpts.netOpts_.bindOptsInformational_.strAddrHTTP4_ = chainParams.nodeInfo.ip;
             serverOpts.netOpts_.bindOptsInformational_.nBasePortHTTP4_ = nExplicitPortHTTP4nfo;
@@ -2990,6 +3065,7 @@ int main( int argc, char** argv ) try {
             serverOpts.netOpts_.bindOptsInformational_.nBasePortHTTPS4_ = nExplicitPortHTTPS4nfo;
             serverOpts.netOpts_.bindOptsInformational_.strAddrHTTPS6_ = chainParams.nodeInfo.ip6;
             serverOpts.netOpts_.bindOptsInformational_.nBasePortHTTPS6_ = nExplicitPortHTTPS6nfo;
+
             serverOpts.netOpts_.bindOptsInformational_.strAddrWS4_ = chainParams.nodeInfo.ip;
             serverOpts.netOpts_.bindOptsInformational_.nBasePortWS4_ = nExplicitPortWS4nfo;
             serverOpts.netOpts_.bindOptsInformational_.strAddrWS6_ = chainParams.nodeInfo.ip6;
@@ -2998,8 +3074,10 @@ int main( int argc, char** argv ) try {
             serverOpts.netOpts_.bindOptsInformational_.nBasePortWSS4_ = nExplicitPortWSS4nfo;
             serverOpts.netOpts_.bindOptsInformational_.strAddrWSS6_ = chainParams.nodeInfo.ip6;
             serverOpts.netOpts_.bindOptsInformational_.nBasePortWSS6_ = nExplicitPortWSS6nfo;
+
             serverOpts.netOpts_.strPathSslKey_ = strPathSslKey;
             serverOpts.netOpts_.strPathSslCert_ = strPathSslCert;
+            serverOpts.netOpts_.strPathSslCA_ = strPathSslCA;
             serverOpts.lfExecutionDurationMaxForPerformanceWarning_ =
                 lfExecutionDurationMaxForPerformanceWarning;
             try {
@@ -3453,8 +3531,9 @@ int main( int argc, char** argv ) try {
             << cc::debug( "Done, programmatic shutdown via Web3 is disabled" );
     }
 
-    dev::setThreadName( "main" );
+    skale::network::browser::refreshing_start( configPath.string() );
 
+    dev::setThreadName( "main" );
     if ( g_client ) {
         unsigned int n = g_client->blockChain().details().number;
         unsigned int mining = 0;
@@ -3464,6 +3543,9 @@ int main( int argc, char** argv ) try {
         while ( !ExitHandler::shouldExit() )
             this_thread::sleep_for( chrono::milliseconds( 1000 ) );
     }
+
+    skale::network::browser::refreshing_stop();
+
     if ( g_jsonrpcIpcServer.get() ) {
         g_jsonrpcIpcServer->StopListening();
         g_jsonrpcIpcServer.reset( nullptr );

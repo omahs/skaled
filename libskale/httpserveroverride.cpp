@@ -2092,7 +2092,6 @@ SkaleServerOverride::SkaleServerOverride(
     }  // block
 }
 
-
 SkaleServerOverride::~SkaleServerOverride() {
     if ( iwBlockStats_ != unsigned( -1 ) ) {
         ethereum()->uninstallNewBlockWatch( iwBlockStats_ );

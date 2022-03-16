@@ -324,6 +324,7 @@ public:
 
     struct net_bind_opts_t {
         size_t cntServers_ = 1;
+
         std::string strAddrHTTP4_;
         int nBasePortHTTP4_ = 0;
         std::string strAddrHTTP6_;
@@ -332,6 +333,7 @@ public:
         int nBasePortHTTPS4_ = 0;
         std::string strAddrHTTPS6_;
         int nBasePortHTTPS6_ = 0;
+
         std::string strAddrWS4_;
         int nBasePortWS4_ = 0;
         std::string strAddrWS6_;
@@ -340,11 +342,13 @@ public:
         int nBasePortWSS4_ = 0;
         std::string strAddrWSS6_;
         int nBasePortWSS6_ = 0;
+
         net_bind_opts_t() {}
         net_bind_opts_t( const net_bind_opts_t& other ) { assign( other ); }
         net_bind_opts_t& operator=( const net_bind_opts_t& other ) { return assign( other ); }
         net_bind_opts_t& assign( const net_bind_opts_t& other ) {
             cntServers_ = other.cntServers_;
+
             strAddrHTTP4_ = other.strAddrHTTP4_;
             nBasePortHTTP4_ = other.nBasePortHTTP4_;
             strAddrHTTP6_ = other.strAddrHTTP6_;
@@ -353,6 +357,7 @@ public:
             nBasePortHTTPS4_ = other.nBasePortHTTPS4_;
             strAddrHTTPS6_ = other.strAddrHTTPS6_;
             nBasePortHTTPS6_ = other.nBasePortHTTPS6_;
+
             strAddrWS4_ = other.strAddrWS4_;
             nBasePortWS4_ = other.nBasePortWS4_;
             strAddrWS6_ = other.strAddrWS6_;
@@ -361,6 +366,7 @@ public:
             nBasePortWSS4_ = other.nBasePortWSS4_;
             strAddrWSS6_ = other.strAddrWSS6_;
             nBasePortWSS6_ = other.nBasePortWSS6_;
+
             return ( *this );
         }
     };
@@ -369,6 +375,7 @@ public:
         net_bind_opts_t bindOptsInformational_;
         std::string strPathSslKey_;
         std::string strPathSslCert_;
+        std::string strPathSslCA_;
         std::atomic_size_t cntConnections_ = 0;
         std::atomic_size_t cntConnectionsMax_ = 0;  // 0 is unlimited
         net_opts_t() {}
@@ -379,6 +386,7 @@ public:
             bindOptsInformational_ = other.bindOptsInformational_;
             strPathSslKey_ = other.strPathSslKey_;
             strPathSslCert_ = other.strPathSslCert_;
+            strPathSslCA_ = other.strPathSslCA_;
             cntConnections_ = size_t( other.cntConnections_ );
             cntConnectionsMax_ = size_t( other.cntConnectionsMax_ );
             return ( *this );
