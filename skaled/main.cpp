@@ -3077,7 +3077,7 @@ int main( int argc, char** argv ) try {
 
             serverOpts.netOpts_.strPathSslKey_ = strPathSslKey;
             serverOpts.netOpts_.strPathSslCert_ = strPathSslCert;
-            serverOpts.netOpts_.strPathSslCA_ = strPathSslCA;
+            // serverOpts.netOpts_._strPathSslCA = strPathSslCA;
             serverOpts.lfExecutionDurationMaxForPerformanceWarning_ =
                 lfExecutionDurationMaxForPerformanceWarning;
             try {

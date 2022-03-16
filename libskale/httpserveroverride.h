@@ -375,7 +375,7 @@ public:
         net_bind_opts_t bindOptsInformational_;
         std::string strPathSslKey_;
         std::string strPathSslCert_;
-        std::string strPathSslCA_;
+        // std::string strPathSslCA_;
         std::atomic_size_t cntConnections_ = 0;
         std::atomic_size_t cntConnectionsMax_ = 0;  // 0 is unlimited
         net_opts_t() {}
@@ -386,7 +386,7 @@ public:
             bindOptsInformational_ = other.bindOptsInformational_;
             strPathSslKey_ = other.strPathSslKey_;
             strPathSslCert_ = other.strPathSslCert_;
-            strPathSslCA_ = other.strPathSslCA_;
+            // strPathSslCA_ = other.strPathSslCA_;
             cntConnections_ = size_t( other.cntConnections_ );
             cntConnectionsMax_ = size_t( other.cntConnectionsMax_ );
             return ( *this );
