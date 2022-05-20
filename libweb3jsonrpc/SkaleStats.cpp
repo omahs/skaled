@@ -1492,8 +1492,11 @@ static dev::bytes& stat_append_hash_str_2_vec( dev::bytes& vec, const std::strin
 
 static dev::bytes& stat_append_u256_2_vec( dev::bytes& vec, const dev::u256& val ) {
     bytes v = dev::BMPBN::encode2vec< dev::u256 >( val, true );
-    stat_array_align_right( v, 32 );
-    stat_array_invert( v.data(), v.size() );
+
+    //    stat_array_align_right( v, 32 );
+    //    stat_array_invert( v.data(), v.size() );
+    stat_bytes_align_left( v, 32 );
+
     vec.insert( vec.end(), v.begin(), v.end() );
     return vec;
 }
