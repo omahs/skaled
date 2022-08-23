@@ -151,7 +151,7 @@ public:
         ReadGuard l( m_lock );
         ret.dropped = m_dropped.size();
         ret.current = m_currentByHash.size();
-        ret.future = m_future.size();
+        ret.future = m_futureSize;
         return ret;
     }
 

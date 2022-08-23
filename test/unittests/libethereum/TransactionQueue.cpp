@@ -497,4 +497,71 @@ BOOST_AUTO_TEST_CASE( tqEqueue ) {
     //    BOOST_REQUIRE( topTr.size() == 1 );
 }
 
+BOOST_AUTO_TEST_CASE( transactionOrderWithFutures ) {
+    TransactionQueue tq( TransactionQueue::Limits{4,2} );
+
+    Transaction dummy1 = TestTransaction::defaultTransaction(11).transaction();
+    Transaction dummy2 = TestTransaction::defaultTransaction(12).transaction();
+
+    Transaction tx0 = TestTransaction::defaultTransaction(0).transaction();
+
+    Transaction tx1 = TestTransaction::defaultTransaction(1).transaction();
+    Transaction tx2 = TestTransaction::defaultTransaction(2).transaction();
+    Transaction tx3 = TestTransaction::defaultTransaction(3).transaction();
+    Transaction tx4 = TestTransaction::defaultTransaction(4).transaction();
+
+    // put dummy txns
+    tq.import( dummy1.rlp(), IfDropped::Ignore, true );
+    tq.import( dummy2.rlp(), IfDropped::Ignore, true );
+    TransactionQueue::Status status = tq.status();
+    BOOST_REQUIRE( status.current == 0 && status.future == 2 );
+
+    // 1 put 2 normal overflow transactions
+    tq.import( tx1.rlp(), IfDropped::Ignore, true );
+    tq.import( tx2.rlp(), IfDropped::Ignore, true );
+    // overflow
+    status = tq.status();
+    BOOST_REQUIRE( status.current == 0 && status.future == 2 );
+    BOOST_REQUIRE(tq.knownTransactions().count(dummy1.sha3()) == 0);
+    BOOST_REQUIRE(tq.knownTransactions().count(dummy2.sha3()) == 0);
+
+    // 2 make them current
+    tq.import(tx0.rlp());
+    status = tq.status();
+    BOOST_REQUIRE( status.current == 3 && status.future == 0 );
+
+    BOOST_REQUIRE_EQUAL( tq.topTransactionsSync( 1, 0, 1 ).size(), 1 );
+    BOOST_REQUIRE_EQUAL( tq.topTransactionsSync( 1, 0, 1 ).size(), 1 );
+    BOOST_REQUIRE_EQUAL( tq.topTransactionsSync( 1, 0, 1 ).size(), 1 );
+    BOOST_REQUIRE_EQUAL( tq.topTransactionsSync( 1, 0, 1 ).size(), 0 );
+
+    tq.dropGood(tx0);
+    status = tq.status();
+    BOOST_REQUIRE( status.current == 2 && status.future == 0 );
+
+    // 3 put and broadcast 2 future in backward order
+    tq.import( tx4.rlp(), IfDropped::Ignore, true );
+    tq.import( tx3.rlp() );
+    status = tq.status();
+    BOOST_REQUIRE( status.current == 4 && status.future == 0 );
+
+    // try block prposal before bcast
+    Transactions top2 = tq.topTransactionsSync(1000, [&tq]( const Transaction& tx ) -> bool {
+        return ( tq.getCategory( tx.sha3() ) == 1 );
+    });
+    BOOST_REQUIRE_EQUAL( top2.size(), 2 );
+    BOOST_REQUIRE( top2 == ( Transactions{ tx1, tx2 } ) );
+
+    BOOST_REQUIRE_EQUAL( tq.topTransactionsSync( 1, 0, 1 ).size(), 1 );
+    BOOST_REQUIRE_EQUAL( tq.topTransactionsSync( 1, 0, 1 ).size(), 1 );
+    BOOST_REQUIRE_EQUAL( tq.topTransactionsSync( 1, 0, 1 ).size(), 0 );
+
+    // 4 check their fall-through to current
+    Transactions top = tq.topTransactionsSync(1000, [&tq]( const Transaction& tx ) -> bool {
+        return ( tq.getCategory( tx.sha3() ) == 1 );
+    });
+    BOOST_REQUIRE_EQUAL( top.size(), 4 );
+    BOOST_REQUIRE( top == ( Transactions{ tx1, tx2, tx3, tx4 } ) );
+}
+
 BOOST_AUTO_TEST_SUITE_END()
