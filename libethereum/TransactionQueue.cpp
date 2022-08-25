@@ -431,10 +431,17 @@ void TransactionQueue::dropGood( Transaction const& _t ) {
     if ( !_t.isInvalid() )
         makeCurrent_WITH_LOCK( _t );
 
-    if ( !m_known.count( _t.sha3() ) )
+    if ( m_known.count( _t.sha3() ) )
+        remove_WITH_LOCK( _t.sha3() );
+
+    if ( _t.isInvalid() )
         return;
 
-    remove_WITH_LOCK( _t.sha3() );
+    // re-insert transactions with changed height
+    for(auto it1: m_currentByAddressAndNonce[_t.from()]){
+        PriorityQueue::iterator it2 = it1.second;
+        m_current.insert( m_current.extract( it2 ) );
+    }// for
 }
 
 void TransactionQueue::clear() {

@@ -166,8 +166,8 @@ BOOST_AUTO_TEST_CASE( tqNonceChange ) {
     for(auto tx: top6){
         std::cout << tx.from() << " nonce=" << tx.nonce() << " h=" << ((tx.from()==tx10.from()) ? tx.nonce() : tx.nonce()-2) << std::endl;
     }
-    // expected BAD result       [tx10], [tx11, tx23], [tx12, tx22], [tx13] !!!
-    BOOST_REQUIRE( ( Transactions{tx10, tx11, tx22, tx23, tx12, tx13 } ) == top6 );
+    // with re-insertion:
+    BOOST_REQUIRE( ( Transactions{tx10, tx22, tx11, tx23, tx12, tx13 } ) == top6 );
 }
 
 BOOST_AUTO_TEST_CASE( tqFuture ) {
