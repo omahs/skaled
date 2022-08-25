@@ -440,6 +440,7 @@ void TransactionQueue::dropGood( Transaction const& _t ) {
     // re-insert transactions with changed height
     for(auto it1: m_currentByAddressAndNonce[_t.from()]){
         PriorityQueue::iterator it2 = it1.second;
+        LOG( m_loggerDetail ) << "Re-inserting transaction with lower nonce" << it2->transaction.sha3();
         m_current.insert( m_current.extract( it2 ) );
     }// for
 }
