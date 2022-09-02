@@ -82,5 +82,20 @@ h256 ManuallyRotatingLevelDB::hashBase() const {
     return hash;
 }
 
+void ManuallyRotatingLevelDB::HACKdeduplicateOldPieces(){
+
+    auto func = [this]( Slice _key, Slice )->bool {
+        for ( const auto& p : *io_backend ) {
+            if( p.get() == currentPiece() )
+                continue;
+            p->kill( _key );
+        }
+        return true;
+    };
+
+    std::shared_lock< std::shared_mutex > lock( m_mutex );
+    currentPiece()->forEach( func );
+}
+
 }  // namespace db
 }  // namespace dev

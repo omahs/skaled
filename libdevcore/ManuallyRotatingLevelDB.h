@@ -42,6 +42,10 @@ public:
 
     virtual void forEach( std::function< bool( Slice, Slice ) > f ) const;
     virtual h256 hashBase() const;
+
+    // remove from old pieces keys that already were overwritten in current piece
+    // used for Covey chain repair %)
+    void HACKdeduplicateOldPieces();
 };
 
 }  // namespace db
