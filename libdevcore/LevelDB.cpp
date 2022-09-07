@@ -78,7 +78,9 @@ void LevelDBWriteBatch::insert( Slice _key, Slice _value ) {
 }
 
 void LevelDBWriteBatch::kill( Slice _key ) {
-    m_writeBatch.Delete( toLDBSlice( _key ) );
+    leveldb::Slice dbs = toLDBSlice( _key );
+    std::cerr << "Delete " << dev::toHex( dbs.data(), dbs.data()+dbs.size(), "0x" ) << std::endl;
+    m_writeBatch.Delete( dbs );
 }
 
 }  // namespace
@@ -142,6 +144,7 @@ void LevelDB::insert( Slice _key, Slice _value ) {
 
 void LevelDB::kill( Slice _key ) {
     leveldb::Slice const key( _key.data(), _key.size() );
+    std::cerr << "Delete Directly " << dev::toHex( key.data(), key.data()+key.size(), "0x" ) << std::endl;
     auto const status = m_db->Delete( m_writeOptions, key );
     checkStatus( status );
 }

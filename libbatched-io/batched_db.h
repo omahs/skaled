@@ -13,6 +13,7 @@ class db_operations_face {
 public:
     virtual void insert( dev::db::Slice _key, dev::db::Slice _value ) = 0;
     virtual void kill( dev::db::Slice _key ) = 0;
+    virtual void HACKkillDirectly( dev::db::Slice _key ) = 0;
 
     // readonly
     virtual std::string lookup( dev::db::Slice _key ) const = 0;
@@ -47,6 +48,9 @@ public:
         std::lock_guard< std::mutex > batch_lock( m_batch_mutex );
         ensure_batch();
         m_batch->kill( _key );
+    }
+    void HACKkillDirectly( dev::db::Slice _key ) {
+        m_db->kill( _key );
     }
     virtual void revert() {
         std::lock_guard< std::mutex > batch_lock( m_batch_mutex );
@@ -96,6 +100,7 @@ private:
         prefixed_db( char _prefix, std::shared_ptr< db_face > _backend );
         virtual void insert( dev::db::Slice _key, dev::db::Slice _value );
         virtual void kill( dev::db::Slice _key );
+        virtual void HACKkillDirectly( dev::db::Slice _key );
         virtual void revert() { backend->revert(); }
         virtual void commit( const std::string& test_crash_string = std::string() ) {
             backend->commit( test_crash_string );

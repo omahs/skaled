@@ -167,14 +167,14 @@ void AmsterdamFixPatch::initOnChain( batched_io::db_operations_face& _blocksDB,
 
         // write block
 
-        _blocksDB.kill( toSlice( old_hash ) );
+        _blocksDB.HACKkillDirectly( toSlice( old_hash ) );
         _blocksDB.insert( toSlice( new_hash ), db::Slice( ref( new_binary ) ) );
 
         // update extras
 
         block_details.parent = prev_hash;
 
-        _extrasDB.kill( toSlice( old_hash, ExtraDetails ) );
+        _extrasDB.HACKkillDirectly( toSlice( old_hash, ExtraDetails ) );
         _extrasDB.insert(
             toSlice( new_hash, ExtraDetails ), ( db::Slice ) dev::ref( block_details.rlp() ) );
 
@@ -184,11 +184,11 @@ void AmsterdamFixPatch::initOnChain( batched_io::db_operations_face& _blocksDB,
             toSlice( prev_hash, ExtraDetails ), ( db::Slice ) dev::ref( prev_details.rlp() ) );
 
         string log_blooms = _extrasDB.lookup( toSlice( old_hash, ExtraLogBlooms ) );
-        _extrasDB.kill( toSlice( old_hash, ExtraLogBlooms ) );
+        _extrasDB.HACKkillDirectly( toSlice( old_hash, ExtraLogBlooms ) );
         _extrasDB.insert( toSlice( new_hash, ExtraLogBlooms ), db::Slice( log_blooms ) );
 
         string receipts = _extrasDB.lookup( toSlice( old_hash, ExtraReceipts ) );
-        _extrasDB.kill( toSlice( old_hash, ExtraReceipts ) );
+        _extrasDB.HACKkillDirectly( toSlice( old_hash, ExtraReceipts ) );
         _extrasDB.insert( toSlice( new_hash, ExtraReceipts ), db::Slice( receipts ) );
 
         _extrasDB.insert( toSlice( h256( bn ), ExtraBlockHash ),
@@ -217,9 +217,9 @@ void AmsterdamFixPatch::initOnChain( batched_io::db_operations_face& _blocksDB,
 
         if ( old_hash == best_hash ) {
             // fix "" key
-            _db.kill( db::Slice( "\x0") );
+            _db.HACKkillDirectly( db::Slice( "\x0") );
             // update latest
-            _extrasDB.kill( db::Slice( "best" ) );
+            _extrasDB.HACKkillDirectly( db::Slice( "best" ) );
             _extrasDB.insert(
                 db::Slice( "best" ), db::Slice( ( const char* ) new_hash.data(), 32 ) );
             _db.commit( "repair_best" );

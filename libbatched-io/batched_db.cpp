@@ -36,6 +36,13 @@ void db_splitter::prefixed_db::kill( dev::db::Slice _key ) {
     backend->kill( dev::ref( key2 ) );
 }
 
+void db_splitter::prefixed_db::HACKkillDirectly( dev::db::Slice _key ) {
+    std::vector< char > key2 = _key.toVector();
+    key2.insert( key2.begin(), prefix );
+
+    backend->HACKkillDirectly( dev::ref( key2 ) );
+}
+
 std::string db_splitter::prefixed_db::lookup( dev::db::Slice _key ) const {
     assert( _key.size() >= 1 );
 

@@ -259,8 +259,11 @@ void BlockChain::open( fs::path const& _path, bool _applyPatches, WithExisting _
         }
     }
 
-    if ( _applyPatches && AmsterdamFixPatch::isInitOnChainNeeded( *m_blocksDB, *m_extrasDB ) ){
+    if ( _applyPatches /*&& AmsterdamFixPatch::isInitOnChainNeeded( *m_blocksDB, *m_extrasDB )*/ ){
         AmsterdamFixPatch::initOnChain( *m_blocksDB, *m_extrasDB, *m_db, chainParams() );
+    }
+    if( _applyPatches && getenv("SKALED_HACK_DEDUPLICATE") ){
+        LOG( m_loggerInfo ) << "Trying to deduplicate DB";
         m_rotating_db->HACKdeduplicateOldPieces();
     }
 
