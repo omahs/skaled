@@ -128,7 +128,8 @@ void AmsterdamFixPatch::initOnChain( batched_io::db_operations_face& _blocksDB,
     clog( VerbosityInfo, "AmsterdamFixPatch" )
         << "Repairing stateRoots using base block " << start_block;
 
-    for ( size_t bn = start_block;; ++bn ) {
+    volatile size_t dummy = start_block;
+    for ( size_t bn = start_block; bn != dummy; ++bn ) {
         // read block
 
         h256 old_hash = numberHash( _extrasDB, bn );
