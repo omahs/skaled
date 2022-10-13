@@ -22,8 +22,8 @@ SKALE Chains have several predeployed contracts.
 
 * add and remove addresses from the deployment whitelist
 * to check whether an address is on the whitelist
-* enable/disable Free Contract Deployment mode - allow any account to deploy contracts on the SKALE Chain
-* enable/disable Multi Transaction Mode (MTM) multiple transactions from the same account been included in the one block 
+* enable/disable Free Contract Deployment mode - allow any account to deploy contracts on the SKALE Chain.
+* enable/disable Multi Transaction Mode (MTM) multiple transactions from the same account been included in the one block. 
 
 NOTE: currently, when MTM set, it’s always enabled
 
@@ -47,6 +47,10 @@ NOTE: currently, when MTM set, it’s always enabled
 |`0xD1000000000000000000000000000000000000D1`
 | ProxyAdminPredeployed
 | Allow owner to change implementations of predeployed contracts
+
+|`0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24`
+| ERC1820 Registry
+| Provides access to https://eips.ethereum.org/EIPS/eip-1820
 
 |===
 
