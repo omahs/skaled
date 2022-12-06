@@ -187,8 +187,8 @@ void DefaultConsensusFactory::fillRotationHistory( ConsensusEngine& consensus ) 
             nodeGroup.blsPublicKey[1], nodeGroup.blsPublicKey[2], nodeGroup.blsPublicKey[3] };
         rh[nodeGroup.finishTs] = commonBLSPublicKey;
     }
-    consensus.setRotationHistory(
-        std::make_shared< std::map< uint64_t, std::vector< std::string > > >( rh ) );
+//    consensus.setRotationHistory(
+//        std::make_shared< std::map< uint64_t, std::vector< std::string > > >( rh ) );
 } catch ( ... ) {
     std::throw_with_nested( std::runtime_error( "Error reading rotation history (nodeGroups)" ) );
 }
