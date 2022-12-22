@@ -3,8 +3,25 @@ pragma solidity ^0.8.9;
 
 
 contract Callee {
+
+
+    uint value1;
+    uint value2;
+
+    function getSomeValue() public view returns (uint) {
+        uint value3 = value1 * value2 + value1 / 3;
+        return value3 / value1 + value3 * value2;
+    }
+
+    function updateValue(uint a, uint b) public {
+        value1 = a;
+        value2 = b;
+    }
+}
+
+
     function blockNumber() public view returns (uint256) {
-        return block.number;
+        return block.number + 1;
     }
 }
 
@@ -34,7 +51,7 @@ interface IERC20 {
 
 contract Lock is IERC20 {
 
-    Callee c;
+    Callee c = new Callee();
 
 
     uint public totalSupply;
