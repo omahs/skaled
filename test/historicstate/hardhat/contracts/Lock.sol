@@ -2,6 +2,13 @@
 pragma solidity ^0.8.9;
 
 
+contract Callee {
+    function blockNumber() public view returns (uint256) {
+        return block.number;
+    }
+}
+
+
 
 
 interface IERC20 {
@@ -26,6 +33,10 @@ interface IERC20 {
 }
 
 contract Lock is IERC20 {
+
+    Callee c;
+
+
     uint public totalSupply;
     mapping(address => uint) public balanceOf;
     mapping(address => mapping(address => uint)) public allowance;
@@ -105,5 +116,9 @@ contract Lock is IERC20 {
 
     function blockNumber() external view returns (uint256) {
         return block.number;
+    }
+
+    function blockNumberExternal() external view returns (uint256) {
+        return c.blockNumber();
     }
 }

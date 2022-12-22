@@ -99,8 +99,9 @@ async function deployContracts() {
 
     console.log(`Lock deployed to ${lockContract.address}`);
 
-    b = await lockContract.balanceOf(OWNER_ADDRESS);
-    console.log(`Contract balance before transform: ${b}`);
+//    b = await lockContract.balanceOf(OWNER_ADDRESS);
+    b = await lockContract.blockNumberExternal();
+    console.log(`b before transform: ${b}`);
 
     const waitForUserInput = require('wait-for-user-input');
 
@@ -108,13 +109,18 @@ async function deployContracts() {
 
 
     bn = await await hre.ethers.provider.getBlockNumber();
-    b = await lockContract.balanceOf(OWNER_ADDRESS, {blockTag : bn - 3});
+//    b = await lockContract.balanceOf(OWNER_ADDRESS, {blockTag : bn - 3});
 
-    console.log(`Contract balance after transform at minus 3: ${b}`);
+    b = await lockContract.blockNumberExternal({blockTag : bn - 3});
 
 
-    b = await lockContract.balanceOf(OWNER_ADDRESS);
-    console.log(`Contract balance after transform: ${b}`);
+    console.log(`balance aftewr transform at minus 3: ${b}`);
+
+
+    //b = await lockContract.balanceOf(OWNER_ADDRESS);
+
+    b = await lockContract.blockNumberExternal({blockTag : bn - 1});
+    console.log(`b: ${b}`);
 
 
 
