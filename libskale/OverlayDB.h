@@ -69,8 +69,6 @@ public:
     void addReceiptToPartials( const dev::eth::TransactionReceipt& );
     void clearPartialTransactionReceipts();
 
-    // commit key-value pairs in storage
-    void commitStorageValues();
     void commit( const std::string& _debugCommitId );
     void rollback();
     void clearDB();
@@ -115,9 +113,11 @@ private:
     dev::bytes getAuxiliaryKey( dev::h160 const& _address, _byte_ space ) const;
     dev::bytes getStorageKey( dev::h160 const& _address, dev::h256 const& _storageAddress ) const;
 
-
     mutable std::optional< dev::h256 > lastExecutedTransactionHash;
     mutable std::optional< dev::bytes > lastExecutedTransactionReceipts;
+
+    // commit key-value pairs in storage
+    void commitStorageValues();
 
 public:
     std::shared_ptr< batched_io::db_face > db() { return m_db_face; }
