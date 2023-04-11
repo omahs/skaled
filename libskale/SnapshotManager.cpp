@@ -657,7 +657,7 @@ void SnapshotManager::computeSnapshotHash( unsigned _blockNumber, bool is_checki
         }
 
         if ( dummy_counter++ == 1 )
-            batched_io::test_crash_before_commit( "SnapshotManager::doSnapshot" );
+            batched_io::test_crash_before_commit( "SnapshotManager::computeSnapshotHash" );
     }
 
     this->computeAllVolumesHash( _blockNumber, &ctx, is_checking );
