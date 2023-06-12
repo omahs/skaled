@@ -1,7 +1,0 @@
-= What's New in SKALE Chains 3.16
-
-* Added Archive and Sync builds
-* Updated JSON-RPC interface docs
-* Added ERC1820 registry predeployed
-* Fixed Blocknumber formatting in eth_subscription
-* Various bug fixes and performance improvements

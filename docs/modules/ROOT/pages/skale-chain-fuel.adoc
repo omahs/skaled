@@ -1,5 +1,0 @@
-= SKALE Chain FUEL
-
-SKALE Chains enable dApps to run zero-cost gas transactions. This provides an effective way to scale your dApp not only for speed but also to scale economically. However, SKALE Chains do require sFUEL to conduct transactions – this sFUEL is a free gas token with no economic value, providing a way for dApps to facilitate permissive access to SKALE Chains and protects against DDoS attacks.
-
-See xref:develop::sfuel-gas-token.adoc[developing with sFUEL] for more information.
