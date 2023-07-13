@@ -70,10 +70,6 @@ public:
               _l.currentLimit, _l.futureLimit, _l.currentLimitBytes, _l.futureLimitBytes ) {}
     ~TransactionQueue();
     void HandleDestruction();
-    /// Add transaction to the queue to be verified and imported.
-    /// @param _data RLP encoded transaction data.
-    /// @param _nodeId Optional network identified of a node transaction comes from.
-    void enqueue( RLP const& _data, h512 const& _nodeId );
 
     /// Verify and add transaction to the queue synchronously.
     /// @param _tx RLP encoded transaction data.
@@ -148,13 +144,11 @@ public:
     struct Status {
         size_t current;
         size_t future;
-        size_t unverified;
         size_t dropped;
     };
     /// @returns the status of the transaction queue.
     Status status() const {
         Status ret;
-        DEV_GUARDED( x_queue ) { ret.unverified = m_unverified.size(); }
         ReadGuard l( m_lock );
         ret.dropped = m_dropped.size();
         ret.current = m_currentByHash.size();
@@ -211,33 +205,6 @@ public:
 
     public:
         static uint64_t howMany() { return Counter< VerifiedTransaction >::howMany(); }
-    };
-
-    /// Transaction pending verification
-    struct UnverifiedTransaction {
-        UnverifiedTransaction() {}
-        UnverifiedTransaction( bytesConstRef const& _t, h512 const& _nodeId )
-            : transaction( _t.toBytes() ), nodeId( _nodeId ) {}
-        UnverifiedTransaction( UnverifiedTransaction&& _t )
-            : transaction( std::move( _t.transaction ) ), nodeId( std::move( _t.nodeId ) ) {}
-        UnverifiedTransaction& operator=( UnverifiedTransaction&& _other ) {
-            assert( &_other != this );
-
-            transaction = std::move( _other.transaction );
-            nodeId = std::move( _other.nodeId );
-            return *this;
-        }
-
-        UnverifiedTransaction( UnverifiedTransaction const& ) = delete;
-        UnverifiedTransaction& operator=( UnverifiedTransaction const& ) = delete;
-
-        bytes transaction;  ///< RLP encoded transaction data
-        h512 nodeId;        ///< Network Id of the peer transaction comes from
-
-        Counter< UnverifiedTransaction > c;
-
-    public:
-        static uint64_t howMany() { return Counter< UnverifiedTransaction >::howMany(); }
     };
 
     // private:
@@ -298,7 +265,6 @@ private:
     u256 maxNonce_WITH_LOCK( Address const& _a ) const;
     u256 maxCurrentNonce_WITH_LOCK( Address const& _a ) const;
     void setFuture_WITH_LOCK( h256 const& _t );
-    void verifierBody();
 
     mutable SharedMutex m_lock;                    ///< General lock.
     mutable boost::condition_variable_any m_cond;  // for wait/notify
@@ -339,7 +305,6 @@ private:
 
     std::condition_variable m_queueReady;  ///< Signaled when m_unverified has a new entry.
     std::vector< std::thread > m_verifiers;
-    std::deque< UnverifiedTransaction > m_unverified;  ///< Pending verification queue
     mutable Mutex x_queue;                             ///< Verification queue mutex
     std::atomic_bool m_aborting;                       ///< Exit condition for verifier.
 

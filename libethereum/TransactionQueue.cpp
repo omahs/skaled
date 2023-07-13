@@ -53,13 +53,6 @@ TransactionQueue::TransactionQueue( unsigned _limit, unsigned _futureLimit,
         this->m_cond.notify_all();
         return;
     } );
-
-    unsigned verifierThreads = 0;  // std::max( thread::hardware_concurrency(), 3U ) - 2U;
-    for ( unsigned i = 0; i < verifierThreads; ++i )
-        m_verifiers.emplace_back( [this, i]() {
-            setThreadName( "txcheck" + toString( i ) );
-            this->verifierBody();
-        } );
 }
 
 TransactionQueue::~TransactionQueue() {
@@ -465,56 +458,4 @@ void TransactionQueue::clear() {
     m_future.clear();
     m_futureSize = 0;
     m_futureSizeBytes = 0;
-}
-
-void TransactionQueue::enqueue( RLP const& _data, h512 const& _nodeId ) {
-    bool queued = false;
-    {
-        Guard l( x_queue );
-        unsigned itemCount = _data.itemCount();
-        for ( unsigned i = 0; i < itemCount; ++i ) {
-            if ( m_unverified.size() >= c_maxVerificationQueueSize ) {
-                LOG( m_logger ) << "Transaction verification queue is full. Dropping "
-                                << itemCount - i << " transactions";
-                break;
-            }
-            m_unverified.emplace_back( UnverifiedTransaction( _data[i].data(), _nodeId ) );
-            queued = true;
-        }
-    }
-    if ( queued )
-        m_queueReady.notify_all();
-}
-
-void TransactionQueue::verifierBody() {
-    while ( !m_aborting ) {
-        UnverifiedTransaction work;
-
-        {  // block
-            MICROPROFILE_SCOPEI( "TransactionQueue", "unique_lock<Mutex> l(x_queue)", MP_DIMGRAY );
-            unique_lock< Mutex > l( x_queue );
-            {
-                MICROPROFILE_SCOPEI( "TransactionQueue", "m_queueReady.wait", MP_DIMGRAY );
-                m_queueReady.wait(
-                    l, [&]() { return bool( m_aborting ) || ( !m_unverified.empty() ); } );
-            }
-            if ( m_aborting )
-                return;
-            MICROPROFILE_ENTERI(
-                "TransactionQueue", "verifierBody while", MP_LIGHTGOLDENRODYELLOW );
-            work = move( m_unverified.front() );
-            m_unverified.pop_front();
-        }  // block
-
-        try {
-            Transaction t( work.transaction, CheckTransaction::Cheap );  // Signature will be
-                                                                         // checked later
-            ImportResult ir = import( t );
-            m_onImport( ir, t.sha3(), work.nodeId );
-        } catch ( ... ) {
-            // should not happen as exceptions are handled in import.
-            cwarn << "Bad transaction:" << boost::current_exception_diagnostic_information();
-        }
-        MICROPROFILE_LEAVE();
-    }
 }
